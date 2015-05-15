@@ -1,5 +1,5 @@
 INPUT=${1}
-LLVM_HOME=~/Desktop/workspace
+LLVM_HOME=~/Workspace
 if [ $(uname -s) == "Darwin" ]; then
     SHARED_LIB_EXT=dylib;
 else

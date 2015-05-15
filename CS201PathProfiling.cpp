@@ -5,10 +5,15 @@
 #include "llvm/IR/IRBuilder.h"
 #include "llvm/Support/raw_ostream.h"
 #include "llvm/IR/Type.h"
+#include <vector>
  
 using namespace llvm;
  
 namespace {
+
+
+      std::vector<BasicBlock*> vec;
+
   // https://github.com/thomaslee/llvm-demo/blob/master/main.cc
   static Function* printf_prototype(LLVMContext& ctx, Module *mod) {
     std::vector<Type*> printf_arg_types;
@@ -32,9 +37,10 @@ namespace {
  
     //----------------------------------
     bool doInitialization(Module &M) {
-      errs() << "\n---------Starting CS201PathProfiling---------\n";
+      errs() << "\n---------Starting BasicBlockDemo---------\n";
       Context = &M.getContext();
       bbCounter = new GlobalVariable(M, Type::getInt32Ty(*Context), false, GlobalValue::InternalLinkage, ConstantInt::get(Type::getInt32Ty(*Context), 0), "bbCounter");
+      //add ...
       const char *finalPrintString = "BB Count: %d\n";
       Constant *format_const = ConstantDataArray::getString(*Context, finalPrintString);
       BasicBlockPrintfFormatStr = new GlobalVariable(M, llvm::ArrayType::get(llvm::IntegerType::get(*Context, 8), strlen(finalPrintString)+1), true, llvm::GlobalValue::PrivateLinkage, format_const, "BasicBlockPrintfFormatStr");
@@ -48,7 +54,12 @@ namespace {
     //----------------------------------
     bool doFinalization(Module &M) {
       errs() << "-------Finished CS201PathProfiling----------\n";
- 
+      errs() << "basic blocks: \n";
+//add...      
+      for(auto B: vec)
+          errs() << B->getContext() <<", ";
+      errs()<<"\n";
+
       return false;
     }
     
@@ -61,6 +72,10 @@ namespace {
         if(F.getName().equals("main") && isa<ReturnInst>(BB.getTerminator())) { // major hack?
           addFinalPrintf(BB, Context, bbCounter, BasicBlockPrintfFormatStr, printf_func);
         }
+//add...
+        BasicBlock *ptr_BB = &BB; 
+        vec.push_back(ptr_BB);
+
         runOnBasicBlock(BB);
       }
  
@@ -77,7 +92,7 @@ namespace {
       IRB.CreateStore(addAddr, bbCounter);
  
       for(auto &I: BB)
-        errs() << I << "\n";
+        errs() << I <<"<---this is "<< "\n";
  
       return true;
     }
@@ -99,7 +114,6 @@ namespace {
     }
   };
 }
- 
 char CS201PathProfiling::ID = 0;
 static RegisterPass<CS201PathProfiling> X("pathProfiling", "CS201PathProfiling Pass", false, false);
-
+ 
