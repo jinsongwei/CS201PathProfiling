@@ -16,88 +16,89 @@ target triple = "x86_64-pc-linux-gnu"
 
 ; Function Attrs: nounwind uwtable
 define i32 @main() #0 {
-  %1 = load i32* @bbCounter
-  %2 = add i32 1, %1
-  store i32 %2, i32* @bbCounter
-  %3 = alloca i32, align 4
+"0":
+  %0 = load i32* @bbCounter
+  %1 = add i32 1, %0
+  store i32 %1, i32* @bbCounter
+  %2 = alloca i32, align 4
   %x = alloca i32, align 4
   %j = alloca i32, align 4
   %i = alloca i32, align 4
-  store i32 0, i32* %3
+  store i32 0, i32* %2
   store i32 0, i32* %x, align 4
-  %4 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([17 x i8]* @.str1, i32 0, i32 0))
-  %5 = call i32 (i8*, ...)* @__isoc99_scanf(i8* getelementptr inbounds ([3 x i8]* @.str2, i32 0, i32 0), i32* %x)
-  %6 = load i32* %x, align 4
-  %7 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([17 x i8]* @.str3, i32 0, i32 0), i32 %6)
-  %8 = load i32* %x, align 4
-  %9 = load i32* @y, align 4
-  %10 = icmp ugt i32 %8, %9
-  br i1 %10, label %11, label %18
+  %3 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([17 x i8]* @.str1, i32 0, i32 0))
+  %4 = call i32 (i8*, ...)* @__isoc99_scanf(i8* getelementptr inbounds ([3 x i8]* @.str2, i32 0, i32 0), i32* %x)
+  %5 = load i32* %x, align 4
+  %6 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([17 x i8]* @.str3, i32 0, i32 0), i32 %5)
+  %7 = load i32* %x, align 4
+  %8 = load i32* @y, align 4
+  %9 = icmp ugt i32 %7, %8
+  br i1 %9, label %"1", label %"2"
 
-; <label>:11                                      ; preds = %0
-  %12 = load i32* @bbCounter
-  %13 = add i32 1, %12
-  store i32 %13, i32* @bbCounter
-  %14 = load i8** @hw, align 8
-  %15 = load i32* %x, align 4
-  %16 = load i32* @y, align 4
-  %17 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([10 x i8]* @.str4, i32 0, i32 0), i8* %14, i32 %15, i32 %16)
-  br label %25
+"1":                                              ; preds = %"0"
+  %10 = load i32* @bbCounter
+  %11 = add i32 1, %10
+  store i32 %11, i32* @bbCounter
+  %12 = load i8** @hw, align 8
+  %13 = load i32* %x, align 4
+  %14 = load i32* @y, align 4
+  %15 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([10 x i8]* @.str4, i32 0, i32 0), i8* %12, i32 %13, i32 %14)
+  br label %"3"
 
-; <label>:18                                      ; preds = %0
-  %19 = load i32* @bbCounter
-  %20 = add i32 1, %19
-  store i32 %20, i32* @bbCounter
-  %21 = load i32* %x, align 4
-  %22 = load i8** @hw, align 8
-  %23 = load i32* @y, align 4
-  %24 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([10 x i8]* @.str5, i32 0, i32 0), i32 %21, i8* %22, i32 %23)
-  br label %25
+"2":                                              ; preds = %"0"
+  %16 = load i32* @bbCounter
+  %17 = add i32 1, %16
+  store i32 %17, i32* @bbCounter
+  %18 = load i32* %x, align 4
+  %19 = load i8** @hw, align 8
+  %20 = load i32* @y, align 4
+  %21 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([10 x i8]* @.str5, i32 0, i32 0), i32 %18, i8* %19, i32 %20)
+  br label %"3"
 
-; <label>:25                                      ; preds = %18, %11
-  %26 = load i32* @bbCounter
-  %27 = add i32 1, %26
-  store i32 %27, i32* @bbCounter
+"3":                                              ; preds = %"2", %"1"
+  %22 = load i32* @bbCounter
+  %23 = add i32 1, %22
+  store i32 %23, i32* @bbCounter
   store i32 0, i32* %j, align 4
   store i32 0, i32* %i, align 4
-  br label %28
+  br label %"4"
 
-; <label>:28                                      ; preds = %40, %25
+"4":                                              ; preds = %"6", %"3"
+  %24 = load i32* @bbCounter
+  %25 = add i32 1, %24
+  store i32 %25, i32* @bbCounter
+  %26 = load i32* %i, align 4
+  %27 = load i32* %x, align 4
+  %28 = icmp slt i32 %26, %27
+  br i1 %28, label %"5", label %"7"
+
+"5":                                              ; preds = %"4"
   %29 = load i32* @bbCounter
   %30 = add i32 1, %29
   store i32 %30, i32* @bbCounter
-  %31 = load i32* %i, align 4
-  %32 = load i32* %x, align 4
-  %33 = icmp slt i32 %31, %32
-  br i1 %33, label %34, label %45
+  %31 = load i32* %x, align 4
+  %32 = load i32* %j, align 4
+  %33 = add nsw i32 %32, %31
+  store i32 %33, i32* %j, align 4
+  br label %"6"
 
-; <label>:34                                      ; preds = %28
-  %35 = load i32* @bbCounter
-  %36 = add i32 1, %35
-  store i32 %36, i32* @bbCounter
-  %37 = load i32* %x, align 4
-  %38 = load i32* %j, align 4
-  %39 = add nsw i32 %38, %37
-  store i32 %39, i32* %j, align 4
-  br label %40
+"6":                                              ; preds = %"5"
+  %34 = load i32* @bbCounter
+  %35 = add i32 1, %34
+  store i32 %35, i32* @bbCounter
+  %36 = load i32* %i, align 4
+  %37 = add nsw i32 %36, 1
+  store i32 %37, i32* %i, align 4
+  br label %"4"
 
-; <label>:40                                      ; preds = %34
-  %41 = load i32* @bbCounter
-  %42 = add i32 1, %41
-  store i32 %42, i32* @bbCounter
-  %43 = load i32* %i, align 4
-  %44 = add nsw i32 %43, 1
-  store i32 %44, i32* %i, align 4
-  br label %28
-
-; <label>:45                                      ; preds = %28
-  %46 = load i32* @bbCounter
-  %47 = add i32 1, %46
-  store i32 %47, i32* @bbCounter
-  %48 = load i32* %j, align 4
-  %49 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([8 x i8]* @.str6, i32 0, i32 0), i32 %48)
-  %50 = load i32* @bbCounter
-  %51 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([14 x i8]* @BasicBlockPrintfFormatStr, i32 0, i32 0), i32 %50)
+"7":                                              ; preds = %"4"
+  %38 = load i32* @bbCounter
+  %39 = add i32 1, %38
+  store i32 %39, i32* @bbCounter
+  %40 = load i32* %j, align 4
+  %41 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([8 x i8]* @.str6, i32 0, i32 0), i32 %40)
+  %42 = load i32* @bbCounter
+  %43 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([14 x i8]* @BasicBlockPrintfFormatStr, i32 0, i32 0), i32 %42)
   ret i32 0
 }
 
