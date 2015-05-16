@@ -45,7 +45,15 @@ namespace {
 */	
 	std::vector<BasicBlock*> BBs;// = new std::vector<BasicBlock*> ;
 	std::vector<BasicBlock*> dominators; //new std::vector<BasicBlock*>;
-
+	
+	static bool myfunction(BasicBlock* i, BasicBlock* j)
+	{
+		string namei = i->getName();
+		string namej = j->getName();
+		int first = atoi(namei.c_str());
+		int second = atoi(namej.c_str());
+		return (first < second);
+	}
 	
 
 
@@ -183,10 +191,9 @@ namespace {
 		while(change)
 		{
 			change = false;
-			for(cnt = 0; cnt < dompairs.size();cnt++)
+			for(cnt = 1; cnt < dompairs.size();cnt++)
 			{
 				vector<BasicBlock*> newdoms;
-				newdoms.push_back(dompairs[cnt].first);
 				BasicBlock * Bb = dompairs[cnt].first;
 				vector<BasicBlock*> temp;
 				temp = BBs;
@@ -200,21 +207,92 @@ namespace {
 					int domNum = atoi(name.c_str());
 					unsigned tempSize = temp.size();
 					unsigned pairSize = dompairs[domNum].second.size();
-					it = std::set_intersection(temp.begin(), temp.end(),(dompairs[domNum].second).begin(), (dompairs[domNum].second).end(), temp.begin());
+					vector<BasicBlock*> temptemp;
+					std::set_intersection(temp.begin(), temp.end(),(dompairs[domNum].second).begin(), (dompairs[domNum].second).end(), inserter(temptemp,temptemp.begin()));
+					temp = temptemp;
 					
 				}
+				bool insert = true;
+				for(auto *B : temp)
+				{
+					if(B->getName() == dompairs[cnt].first->getName()){
+						insert = false;
+						break; 
+					}
+				}
+				newdoms = temp;
+
+				if(insert)
+					newdoms.push_back(dompairs[cnt].first);
+	
+			//sort
+				std::sort(newdoms.begin(), newdoms.end(),myfunction);
+
+				if(!equal(newdoms.begin(), newdoms.end(), dompairs[cnt].second.begin()))
+				{
+					change = true;	
+				} 
+				dompairs[cnt].second = newdoms;
+
 //begin print
+/*
 				errs() << "it's temp:   \n";
 				for(auto *B : temp)
 					errs() << B->getName() << ", ";				
-				
+*/
+//end print				
 			}
 		}
+
+		//begin print		
+		errs() << "dominate tree: \n";
+		unsigned u = 0;
+		while(u < dompairs.size())
+		{
+			errs() << dompairs[u].first->getName() << ": ";
+			j = 0;
+			while(j < dompairs[u].second.size()){
+				errs() << ((dompairs[u].second)[j])->getName() <<", ";
+				j++;
+			}
+			errs() << "\n";	
+			u++;
+		}
+		errs() << "\n";
+//end print	
 		//loop
 		
 	
 
 	}
+	
+/*
+	vector<BasicBlock*> set_union(vector<BasicBlock*> fst, vector<BasicBlock*> snd)
+	{
+		vector<BasicBlock*> newOne;
+		newOne = fst;
+		for(auto *B : snd)
+			newOne.push_back(B);
+		unsigned i = 0;
+		bool change = true;
+		while(change)
+		{
+			change = false;
+			for(i = 0; i < newOne.size();i++)
+			{
+				unsigned j = i+1;
+				for(j =i+1;j< newOne.size();j++)
+					if(newOne[i] == newOne[j])
+					{
+						change = true;
+						newOne.erase(newOne[i]);
+						continue;			
+					}
+				
+			}
+		}	 
+	}
+*/
  
     //----------------------------------
     // Rest of this code is needed to: printf("%d\n", bbCounter); to the end of main, just BEFORE the return statement
