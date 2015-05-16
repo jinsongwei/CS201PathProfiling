@@ -12,8 +12,6 @@ using namespace llvm;
 namespace {
 
 
-      std::vector<BasicBlock*> vec;
-
   // https://github.com/thomaslee/llvm-demo/blob/master/main.cc
   static Function* printf_prototype(LLVMContext& ctx, Module *mod) {
     std::vector<Type*> printf_arg_types;
@@ -56,10 +54,10 @@ namespace {
       errs() << "-------Finished CS201PathProfiling----------\n";
       errs() << "basic blocks: \n";
 //add...      
-      for(auto B: vec)
-          errs() << B->getContext() <<", ";
+/*      for(auto B: vec)
+          errs() << B->getName() <<", ";
       errs()<<"\n";
-
+*/
       return false;
     }
     
@@ -73,8 +71,8 @@ namespace {
           addFinalPrintf(BB, Context, bbCounter, BasicBlockPrintfFormatStr, printf_func);
         }
 //add...
-        BasicBlock *ptr_BB = &BB; 
-        vec.push_back(ptr_BB);
+ //       BasicBlock *ptr_BB = &BB; 
+ //       vec.push_back(ptr_BB);
 
         runOnBasicBlock(BB);
       }
