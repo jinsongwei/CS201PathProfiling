@@ -43,12 +43,7 @@ namespace {
 		std::vector<BasicBlock*> domBlock;
 	};
 */	
-	std::vector<BasicBlock*> BBs;// = new std::vector<BasicBlock*> ;
-//	std::vector<BasicBlock*> dominators; //new std::vector<BasicBlock*>;
-	vector<pair<BasicBlock*, std::vector<BasicBlock*> > > dompairs;
-	vector<pair<BasicBlock*, BasicBlock*>> back_edge;
-	vector<vector<BasicBlock*>> loops;
-	
+		
 	static bool myfunction(BasicBlock* i, BasicBlock* j)
 	{
 		string namei = i->getName();
@@ -56,6 +51,11 @@ namespace {
 		int first = atoi(namei.c_str());
 		int second = atoi(namej.c_str());
 		return (first < second);
+	}
+
+	static bool func_loops(vector<BasicBlock*> &left,vector<BasicBlock*> &right)
+	{
+		return (left.size() < right.size());
 	}
 	
 
@@ -88,6 +88,7 @@ namespace {
       errs() << "basic blocks: \n";
 
 	//dominate tree
+/*
 	errs() << "dominator tree \n";
 	for(unsigned i = 0; i < dompairs.size(); i++)
 	{
@@ -99,17 +100,7 @@ namespace {
 		errs() << "\n";
 	} 
 	errs() << "end dominator tree \n" ;
-
-	
-
-//add...      
-      for(auto *B: BBs)
-          errs() << B->getName() <<", ";
-
-
-
-
-
+*/
       errs()<<"\n";
 
       return false;
@@ -117,6 +108,16 @@ namespace {
     
     //----------------------------------
     bool runOnFunction(Function &F) override {
+
+
+	//declaration
+	std::vector<BasicBlock*> BBs;
+	vector<pair<BasicBlock*, std::vector<BasicBlock*> > > dompairs;
+	vector<pair<BasicBlock*, BasicBlock*>> back_edge;
+	vector<vector<BasicBlock*>> loops_dom;
+	vector<vector<BasicBlock*>> inner_loops;
+	vector<vector<BasicBlock*>> toplos;
+
       errs() << "Function: " << F.getName() << '\n';
  	int count = 0;
       for(auto &BB: F) {
@@ -133,29 +134,29 @@ namespace {
 	
 	count++;
 
-
-
 //..........................................................
         runOnBasicBlock(BB);
       }
-	formDominator(F);	
-	eliminate();
-	find_back_edge();
-	eliminate_back_edge();
-	find_loops();
-	errs() << "\n";
-	/*
-	for(vector<BasicBlock*>::iterator it = back_edge.begin(); it != back_edge.end();it++)
-	{
-		errs() << it.first << " -> " <<it.second << "\t";
-	}
-	*/
-	for(unsigned i = 0; i < back_edge.size();i++)
-	{
-		errs() << back_edge[i].first->getName() << " -> " <<back_edge[i].second->getName() << "\t";
-	}
+	formDominator(BBs, dompairs);	
+	eliminate(dompairs, BBs);
+	find_back_edge(dompairs, back_edge);
+	eliminate_back_edge(back_edge);
+	find_loops(back_edge, loops_dom);
+	find_inner_loops(inner_loops, loops_dom);
 	
- 
+//	for(unsigned i=0;i<inner_loops.size();i++)
+//		toplos.push_back(topological_order(inner_loops[i], true));
+	if(inner_loops.size() != 0)
+		topological_order(inner_loops[0], true);
+	else
+		errs() << "no loops\n";
+	print_dominator(dompairs);
+	print_back_edge(back_edge);
+	print_loop(loops_dom);
+
+
+	errs() << "\n";
+
       return true; // since runOnBasicBlock has modified the program
     }
  
@@ -175,13 +176,12 @@ namespace {
     }
 
 //////////////////////////////////////////////
-	void formDominator(Function &F)
+	void formDominator(vector<BasicBlock*> &BBs, vector<pair<BasicBlock*,vector<BasicBlock*>>> &dompairs)
 	{
 
 		// initialize, 
 		unsigned size = BBs.size();
 		unsigned i = 1;
-		unsigned j = 0;
 //		std::pair <BasicBlock*, std::vector<BasicBlock*> > pairs[size]; 
 		vector<BasicBlock*> BBsTemp = BBs;
 		BBsTemp.erase(BBsTemp.begin());
@@ -204,16 +204,7 @@ namespace {
 			vector<BasicBlock*> BBsT = BBs;
 			
 			dompairs.push_back(std::make_pair(BBs[i],BBsT));
-
-//begin print		
-//			errs() << dompairs[i].first->getName() << ": ";
-//			j = 0;
-//			while(j < dompairs[i].second.size()){
-//				errs() << ((dompairs[i].second)[j])->getName() <<", ";
-//				j++;
-//			}
-//			errs() << "\n";
-//end print			
+		
 			i++;
 		}
 		// end initialization
@@ -237,8 +228,6 @@ namespace {
 					//intersection
 					string name = Pred->getName();
 					int domNum = atoi(name.c_str());
-					unsigned tempSize = temp.size();
-					unsigned pairSize = dompairs[domNum].second.size();
 					vector<BasicBlock*> temptemp;
 					std::set_intersection(temp.begin(), temp.end(),(dompairs[domNum].second).begin(), (dompairs[domNum].second).end(), inserter(temptemp,temptemp.begin()));
 					temp = temptemp;
@@ -276,12 +265,13 @@ namespace {
 			}
 		}
 	}
-	void find_back_edge()
+	void find_back_edge(vector<pair<BasicBlock*, std::vector<BasicBlock*>>> &dompairs, vector<pair<BasicBlock*,BasicBlock*>> &back_edge)
+
 	{
 		unsigned cnt;
 		for(cnt = 0; cnt < dompairs.size();cnt++)
 		{
-			int i;
+			unsigned i;
 			for(i = 1; i < (dompairs[cnt].second).size();i++)
 			{
 				BasicBlock* Bb = dompairs[cnt].second[i];
@@ -289,7 +279,7 @@ namespace {
 				for(succ_iterator PI = succ_begin(Bb),E=succ_end(Bb); PI != E; ++PI)
 				{
 					BasicBlock *succ = *PI;
-					int j;
+					unsigned j;
 					for(j = 0;j<i;j++)
 					{
 						if(succ->getName() == (dompairs[cnt].second[j])->getName())
@@ -304,19 +294,17 @@ namespace {
 		}
 	}
 
-	void eliminate()
+	void eliminate(vector<pair<BasicBlock*,vector<BasicBlock*>>> &dompairs, vector<BasicBlock*> &BBs)
 	{
 		if(dompairs.size() != BBs.size())
 		{
 			unsigned size_bbs = BBs.size();
-			unsigned size_dom = dompairs.size();
 			dompairs.erase(dompairs.begin() + size_bbs - 1, dompairs.end());
 		}
 	}
-	void eliminate_back_edge()
+	void eliminate_back_edge(vector<pair<BasicBlock*,BasicBlock*>> &back_edge)
 	{
 		bool change = true;
-		bool jump = false;
 		while(change){
 			change = false;
 			for(unsigned i=0; i < back_edge.size();i++)
@@ -333,86 +321,283 @@ namespace {
 					}
 	
 				}
-			//	if(jump)
-			//	{
-			//		jump = false;
-			//		break;
-			//	}
 			}
 		}	
 	}
-	void find_loops()
+	void find_loops(vector<pair<BasicBlock*, BasicBlock*>> &back_edge, vector<vector<BasicBlock*>> &loops_dom)
 	{
 		for(unsigned i = 0; i<back_edge.size();i++)
 		{
-			find_loop(back_edge[i].first, back_edge[i].second);
+			find_loop(back_edge[i].first, back_edge[i].second, loops_dom);
 		}
 	}
-	void find_loop(BasicBlock *n, BasicBlock *d)
+	void find_loop(BasicBlock *n, BasicBlock *d, vector<vector<BasicBlock*>> &loops_dom)
 	{
-		vector<BasicBlock*> loop;
+		vector<BasicBlock*> loop_dom;
 		//initial
 		stack<BasicBlock*> stacks;
-		loop.push_back(d);
-		loop.push_back(n);
+		loop_dom.push_back(d);
+		loop_dom.push_back(n);
 		stacks.push(n);	
-		
-		while(!stacks.empty())
+		BasicBlock* m;		
+		bool isThere = false;
+	//	int count = 0;
+		while(!stacks.empty()/* && count < 5 */)
 		{
-			BasicBlock* m = stacks.top();
+			m = stacks.top();
 			stacks.pop();
+//			errs() << m->getName() << ", ";
 			for(pred_iterator PI = pred_begin(m),E=pred_end(m);PI != E;++PI)
 			{
 				BasicBlock *pred = *PI;
-				bool isThere = false;
-				for(unsigned i = 0; i<loop.size();i++)
+//				errs() << "pred: " << pred->getName() <<"\n";
+				for(unsigned i = 0; i<loop_dom.size();i++)
 				{
-					if(pred->getName() == m->getName())
+					if(pred->getName() == loop_dom[i]->getName())
 						isThere = true;
-						break; 
 				}
 				if(!isThere)
 				{
-					loop.push_back(pred);
+					loop_dom.push_back(pred);
 					stacks.push(pred);
-					isThere = false;
 				}
+//				errs() << "stacks size: " << stacks.size() << "\n";
+				isThere = false;
 			}
+		errs() << "\n";
 		}	
 		
-		loops.push_back(loop);
-			
-
+		loops_dom.push_back(loop_dom);
 	}
-	
-	
-/*
-	vector<BasicBlock*> set_union(vector<BasicBlock*> fst, vector<BasicBlock*> snd)
+
+
+	void find_inner_loops(vector<vector<BasicBlock*>> &inner_loops, vector<vector<BasicBlock*>> &loops_dom)
 	{
-		vector<BasicBlock*> newOne;
-		newOne = fst;
-		for(auto *B : snd)
-			newOne.push_back(B);
-		unsigned i = 0;
+
+		vector<unsigned> erase_list;
+		vector<vector<BasicBlock*>> loops = loops_dom;
+		vector<vector<BasicBlock*>> inners;
+		if(loops.size() > 1)
+		{
+			for(unsigned i=0; i<loops.size();i++)
+			{
+				for(unsigned j = 0; j<loops.size();j++)
+				{
+					if(i == j)
+						continue;
+					
+					vector<BasicBlock*> intersec;
+					set_intersection(loops[i].begin(),loops[i].end(),loops[j].begin(),loops[j].end(),inserter(intersec,intersec.begin()));
+		
+				if(equal(intersec.begin(),intersec.end(),loops[i].begin()) && loops[i].size() < loops[j].size())
+					{
+						erase_list.push_back(j);
+					}
+				}
+			}
+			if(erase_list.size() != 0)
+			{
+				for(unsigned i = 0;i<loops.size();i++)
+				{
+					if(!in_list(i,erase_list))
+					{
+						inners.push_back(loops[i]);
+					}
+				}
+			}
+			else
+				inners = loops;
+		}	
+		else
+			inners = loops;
+		
+		inner_loops = inners;
+
+//		errs() << "\n before inner function --->>>";
+//		print_loop(loops);
+//		errs() <<"\n finding inner loops -->>> \n";
+//		print_loop(inners);
+	}
+
+	bool in_list(unsigned i, vector<unsigned> &list)
+	{
+		for(unsigned j = 0; j<list.size();j++)
+			if(i == list[j])
+				return true;
+		return false;
+	}
+
+	void topological_order(vector<BasicBlock*> &bbs, bool is_loop)
+	{
+		vector<pair<BasicBlock*, int>> temp_list;
+		vector<BasicBlock*> rev_topolog;
+		for(unsigned i=0;i<bbs.size();i++)
+		{
+			temp_list.push_back(make_pair(bbs[i],out_links(bbs[i],bbs)));
+		}
+		if(is_loop)
+		{
+			temp_list[1].second = temp_list[1].second - 1;
+		}
+//print
+//		check_preds(bbs);
+//		check_succs(bbs);
+//		errs() << "show here:\n";
+		print_temp_list(temp_list);
 		bool change = true;
-		while(change)
+
+		
+		while(change && rev_topolog.size() < temp_list.size())
 		{
 			change = false;
-			for(i = 0; i < newOne.size();i++)
+			for(unsigned i=0;i<temp_list.size();i++)
 			{
-				unsigned j = i+1;
-				for(j =i+1;j< newOne.size();j++)
-					if(newOne[i] == newOne[j])
-					{
-						change = true;
-						newOne.erase(newOne[i]);
-						continue;			
+				if(temp_list[i].second == 0)
+				{
+					if(i == 0){
+						rev_topolog.push_back(temp_list[i].first);
+						break;
 					}
-				
+					temp_list[i].second = temp_list[i].second - 1;
+					change = true;
+					BasicBlock* Bb = temp_list[i].first;
+					rev_topolog.push_back(Bb);
+					for(pred_iterator PI = pred_begin(Bb),E=pred_end(Bb); PI != E; ++PI)
+					{
+						BasicBlock * pred = *PI;
+//						errs() << "pred got here : " << pred->getName() << "\n";
+						for(unsigned j=0;j<temp_list.size();j++)
+						{
+//							errs() << "comparing: "<<pred->getName()<<", "<<temp_list[j].first->getName() << "\n";
+							if(pred->getName() == temp_list[j].first->getName()){
+								temp_list[j].second = temp_list[j].second - 1;
+//								errs() << temp_list[j].first->getName()<<" temp_list's second : " << temp_list[j].second <<"\n";
+//								errs() << "very inner---->>>>>>>\n";
+//								print_temp_list(temp_list);
+							}
+						}	
+					}
+//					errs() <<"inners::::::\n";
+//					print_temp_list(temp_list);
+					break;	
+				}
 			}
-		}	 
+//			print_temp_list(temp_list);
+		}
+//print
+//		print_temp_list(temp_list);
+		errs() << "topological order: \n";
+		print_BasicBlock(rev_topolog);
+		
+
 	}
-*/
+
+	void check_preds(vector<BasicBlock*> &list)
+	{
+		errs() << "predecesors : \n";
+		for(unsigned i=0; i<list.size(); i++)
+		{
+			errs() << list[i]->getName() << ": ";
+			BasicBlock* Bb = list[i];
+			for(pred_iterator PI = pred_begin(Bb),E=pred_end(Bb); PI != E; ++PI)
+			{
+				BasicBlock* pred = *PI;
+				errs()<<pred->getName()<<", ";	 
+			}
+			errs() <<"\n";
+
+		}
+		errs() << "end preds.....\n";
+	}
+	void check_succs(vector<BasicBlock*> &list)
+	{
+		errs() << "successor: \n";
+		for(unsigned i=0; i<list.size(); i++)
+		{
+			errs() << list[i]->getName() << ": ";
+			BasicBlock* Bb = list[i];
+			for(succ_iterator PI = succ_begin(Bb),E=succ_end(Bb); PI != E; ++PI)
+			{
+				BasicBlock* succ = *PI;
+				errs()<< succ->getName()<<", ";	 
+			}
+			errs() <<"\n";
+
+		}
+		errs() << "end succs.....\n";
+	}
+
+	unsigned out_links(BasicBlock * bb, vector<BasicBlock*> &bbs)
+	{
+		unsigned count = 0;	
+		for(succ_iterator PI = succ_begin(bb),E=succ_end(bb); PI != E; ++PI){
+			BasicBlock* succ = *PI;
+			for(unsigned i=0;i<bbs.size();i++)	
+			{	
+				if(succ->getName() == bbs[i]->getName()){
+					count++;
+				}
+			}
+		}
+		return count;
+	}
+
+	
+	void print_temp_list(vector<pair<BasicBlock*,int>> &list)
+	{
+		errs() <<"temp_list -- >> \n";
+		for(unsigned i=0;i<list.size();i++)
+		{
+			errs() << list[i].first->getName() <<", ["
+				<< list[i].second <<"]";
+			errs() << "\n";
+		}
+		errs() << "\n";
+	}
+
+	void print_loop(vector<vector<BasicBlock*>> &loops_dom)
+	{
+		errs() <<"\n" <<"loops, size is  " << loops_dom.size()<<"\n";
+		for(unsigned i = 0; i<loops_dom.size(); i++)
+		{
+			errs() << "loop: ";
+			for(unsigned j = 0; j<loops_dom[i].size();j++)
+			{
+				errs()<<loops_dom[i][j]->getName() << ", ";
+			}
+			errs() << "\n";
+		}
+	}
+	void print_back_edge(vector<pair<BasicBlock*, BasicBlock*>> &back_edge)
+	{
+		errs()<<"\nback edge: \n";
+		for(unsigned i = 0; i<back_edge.size();i++)
+		{		
+			errs() << back_edge[i].first->getName()<< ", "
+				<< back_edge[i].second->getName() <<"\n";
+		}	
+		errs() <<"\n";
+	}
+	void print_dominator(vector<pair<BasicBlock*,vector<BasicBlock*>>> &dompairs)
+	{
+		errs() <<"dominator tree \n" ;
+		for(unsigned i = 0; i<dompairs.size();i++)
+		{	
+			errs() << dompairs[i].first->getName() <<": ";
+			for(unsigned j = 0; j < dompairs[i].second.size();j++)
+				errs() << dompairs[i].second[j]->getName() <<", ";
+			errs() << "\n";
+		}
+		errs() << "\n";
+	}
+	void print_BasicBlock(vector<BasicBlock*> &list)
+	{
+		errs() << "list : ";
+		for(unsigned i=0;i<list.size();i++)
+			errs() << list[i]->getName() << ", ";
+		errs() << "end list\n";
+	}
+
  
     //----------------------------------
     // Rest of this code is needed to: printf("%d\n", bbCounter); to the end of main, just BEFORE the return statement
